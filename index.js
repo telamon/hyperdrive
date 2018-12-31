@@ -51,7 +51,8 @@ function Hyperdrive (storage, key, opts) {
   this.readable = true
 
   this.storage = storage
-  this.tree = tree(this.metadata, {
+  if (this.metadata.tree) this.tree = this.metadata.tree
+  else this.tree = tree(this.metadata, {
     offset: 1,
     valueEncoding: messages.Stat,
     cache: opts.treeCacheSize !== 0,
@@ -862,7 +863,9 @@ Hyperdrive.prototype._open = function (cb) {
 
     self.content.ready(function () {
       if (self.metadata.has(0)) return cb(new Error('Index already written'))
-      self.metadata.append(messages.Index.encode({type: 'hyperdrive', content: self.content.key}), cb)
+      let index = {type: 'hyperdrive', content: self.content.key}
+      if (typeof self.metadata.appendIndex === 'function') self.metadata.appendIndex(index)
+      else self.metadata.append(messages.Index.encode(index), cb)
     })
   }
 }
